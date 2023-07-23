@@ -1,4 +1,4 @@
-## Interface: 50401
+## Interface: 100105
 ## Title: Spud
 ## Notes: A WoW AddOn for Curious Farmers
 ## Author: Maxwell White (maxehmum on CurseForge & gitatmax on GitHub)
