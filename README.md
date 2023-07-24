@@ -13,7 +13,7 @@ _Checked_ items are implemented, _unchecked_ items are planned.
 - [ ] Use `/killcountresetall` to reset your kill counts for all characters
 - [ ] Use `/killcountwhisper <player>` to whisper your kill counts to a player
 - [ ] Have killcounts automatically reset at a given time each day
-<!-- - [ ] Do not use `/untamedbeastmode` under any circumstances -->
+- [ ] **Do not** use `/untamedbeastmode` under any circumstances
 
 ## Installation
 
