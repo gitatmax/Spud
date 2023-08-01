@@ -23,9 +23,9 @@ Download the latest release from [CurseForge](#) (coming soon) -->
 
 ### Manual Installation
 
-1. Download the latest release from [GitHub](/)
+1. Download the latest release from [GitHub](https://github.com/gitatmax/Spud/releases)
 2. Extract the archive into your World of Warcraft directory
 
 ## Contributing
 
-Submit feedback, bug reports, and feature requests to [GitHub Issues](/). Pull requests are welcome!
+Submit feedback, bug reports, and feature requests to [GitHub Issues](https://github.com/gitatmax/Spud/issues). Pull requests are welcome!
