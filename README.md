@@ -1,6 +1,6 @@
 # Spud
 
-A WoW AddOn for Curious Farmers
+Tools for Curious Farmers
 
 ## Features & Roadmap
 
