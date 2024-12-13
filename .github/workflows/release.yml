@@ -1,0 +1,23 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Create Release Zip
+        run: |
+          zip -r Spud.zip spud.lua spud.toc
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: Spud.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

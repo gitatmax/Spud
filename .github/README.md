@@ -12,9 +12,10 @@ _Checked_ items are implemented, _unchecked_ items are planned.
 - [x] Use `/spudreset` to reset your kill counts
 - [ ] Use `/spudresetall` to reset your kill counts for all characters
 - [x] Use `/spudhelp` to list all available commands
-- [ ] Have killcounts automatically reset at a given time each day
+- [ ] Add option to have killcounts automatically reset at a given time daily
 - [ ] Add option to set killcount duration
 - [ ] Add option to set killcounts to persist between sessions
+- [ ] Add option to enable laps to compare killcounts over time
 
 **WARNING: Do not** use `/untamedbeastmode` under any circumstances
 
