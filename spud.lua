@@ -5,6 +5,10 @@ Spud = Spud or {}
 -- Move all our variables into the namespace
 Spud.playerKills = {}
 Spud.totalKills = 0
+Spud.currentCombatDamage = {}
+Spud.currentTarget = nil
+Spud.playerLoot = {}
+Spud.totalLoot = 0
 
 -- Localization table
 Spud.L = Spud.L or {}
@@ -12,16 +16,27 @@ local L = Spud.L
 
 -- Default English strings
 L["NO_KILLS"] = "No kills have been made yet."
-L["RESET_MESSAGE"] = "Kill counts have been reset."
+L["NO_LOOT"] = "No loot has been collected yet."
+L["RESET_MESSAGE"] = "Statistics have been reset."
 L["HELP_HEADER"] = "Spud Commands:"
 L["USAGE_WHISPER"] = "Usage: /spudwhisper <player>"
+L["VERSION"] = "Spud Version %s"
 
 -- define a function to reset the kill counts
-local function resetKillCounts()
+local function resetCounts()
+  -- Reset kill counts
   for playerName in pairs(Spud.playerKills) do
     Spud.playerKills[playerName] = 0
   end
   Spud.totalKills = 0
+  
+  -- Reset loot counts
+  for playerName in pairs(Spud.playerLoot) do
+    Spud.playerLoot[playerName] = 0
+  end
+  Spud.totalLoot = 0
+  
+  print(L["RESET_MESSAGE"])
 end
 
 -- define a function to generate a kill count message
@@ -33,26 +48,74 @@ local function generateKillCountMessage(playerName, killCount)
   return string.format("%s has killed %d enemies (%.2f%% of total).", playerName, killCount, percentage)
 end
 
+-- define a function to generate loot message
+local function generateLootMessage(playerName, lootAmount)
+  if Spud.totalLoot == 0 then
+    return string.format("%s has looted %d copper.", playerName, lootAmount)
+  end
+  local percentage = (lootAmount / Spud.totalLoot) * 100
+  return string.format("%s has looted %d copper (%.2f%% of total).", playerName, lootAmount, percentage)
+end
+
 -- define our function that handles the event
 local function eventHandler(self, event)
   if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-    local _, subevent, _, srcGUID, _, _, _, _, _, dstFlags = CombatLogGetCurrentEventInfo()
+    local _, subevent, _, srcGUID, _, _, _, destGUID, destName, dstFlags = CombatLogGetCurrentEventInfo()
 
-    if subevent == "PARTY_KILL" then
-      -- check if the killed unit is an NPC
-      local isNPC = bit.band(dstFlags, COMBATLOG_OBJECT_TYPE_NPC) > 0
-
-      if isNPC and srcGUID then
-        -- Get the player name from the GUID
+    -- Track damage events
+    if subevent == "DAMAGE_SHIELD" or subevent == "DAMAGE_SPLIT" or subevent == "RANGE_DAMAGE" or subevent == "SPELL_DAMAGE" or subevent == "SPELL_PERIODIC_DAMAGE" or subevent == "SWING_DAMAGE" then
+      local amount = select(subevent == "SWING_DAMAGE" and 12 or 15, CombatLogGetCurrentEventInfo())
+      
+      -- Initialize damage tracking for this target
+      if not Spud.currentCombatDamage[destGUID] then
+        Spud.currentCombatDamage[destGUID] = {}
+      end
+      
+      -- Add damage to player's total
+      if srcGUID then
         local playerName = select(6, GetPlayerInfoByGUID(srcGUID))
-
-        -- increment the count for this player
         if playerName then
+          Spud.currentCombatDamage[destGUID][playerName] = (Spud.currentCombatDamage[destGUID][playerName] or 0) + amount
+        end
+      end
+    end
+
+    -- Handle kills
+    if subevent == "PARTY_KILL" then
+      local isNPC = bit.band(dstFlags, COMBATLOG_OBJECT_TYPE_NPC) > 0
+      if isNPC and destGUID and Spud.currentCombatDamage[destGUID] then
+        -- Calculate damage percentages and update kill counts
+        local totalDamage = 0
+        for _, damage in pairs(Spud.currentCombatDamage[destGUID]) do
+          totalDamage = totalDamage + damage
+        end
+
+        -- Update kill counts based on damage contribution
+        for playerName, damage in pairs(Spud.currentCombatDamage[destGUID]) do
+          local contribution = damage / totalDamage
           if not Spud.playerKills[playerName] then
             Spud.playerKills[playerName] = 0
           end
-          Spud.playerKills[playerName] = Spud.playerKills[playerName] + 1
-          Spud.totalKills = Spud.totalKills + 1
+          Spud.playerKills[playerName] = Spud.playerKills[playerName] + contribution
+          Spud.totalKills = Spud.totalKills + contribution
+        end
+
+        -- Clear damage tracking for this target
+        Spud.currentCombatDamage[destGUID] = nil
+      end
+    end
+
+    -- Handle loot events
+    if subevent == "LOOT_MONEY" then
+      if srcGUID then
+        local playerName = select(6, GetPlayerInfoByGUID(srcGUID))
+        if playerName then
+          local amount = select(13, CombatLogGetCurrentEventInfo())
+          if not Spud.playerLoot[playerName] then
+            Spud.playerLoot[playerName] = 0
+          end
+          Spud.playerLoot[playerName] = Spud.playerLoot[playerName] + amount
+          Spud.totalLoot = Spud.totalLoot + amount
         end
       end
     end
@@ -85,10 +148,7 @@ SlashCmdList["SPUDSHARE"] = function(msg)
 end
 
 SLASH_SPUDRESET1 = "/spudreset"
-SlashCmdList["SPUDRESET"] = function(msg)
-  resetKillCounts()
-  print(L["RESET_MESSAGE"])
-end
+SlashCmdList["SPUDRESET"] = resetCounts
 
 SLASH_SPUDWHISPER1 = "/spudwhisper"
 SlashCmdList["SPUDWHISPER"] = function(msg)
@@ -113,22 +173,91 @@ end
 
 SLASH_SPUDHELP1 = "/spudhelp"
 SlashCmdList["SPUDHELP"] = function(msg)
-  print("Spud Commands:")
+  print(string.format(L["VERSION"], GetAddOnMetadata("Spud", "Version")))
+  print(L["HELP_HEADER"])
   print("  /spud - List current session's kill counts")
   print("  /spudshare - Share kill counts with party")
   print("  /spudwhisper <player> - Whisper kill counts to player")
-  print("  /spudreset - Reset kill counts")
-  print("  /spudresetall - Reset kill counts for all characters")
+  print("  /spudreset - Reset all statistics")
+  print("  /spudloot - List current session's loot statistics")
+  print("  /spudlootshare - Share loot statistics with party")
+  print("  /spudlootwhisper <player> - Whisper loot statistics to player")
   print("  /spudhelp - Show this help message")
 end
 
 SLASH_SPUDRESETALL1 = "/spudresetall"
 SlashCmdList["SPUDRESETALL"] = function(msg)
   -- Reset current session counts
-  resetKillCounts()
+  resetCounts()
   
   -- TODO: When persistent storage is implemented, this will also clear stored counts for all characters
   print(L["RESET_MESSAGE"])
+end
+
+SLASH_SPUDLOOT1 = "/spudloot"
+SlashCmdList["SPUDLOOT"] = function(msg)
+  local hasLoot = false
+  for playerName, lootAmount in pairs(Spud.playerLoot) do
+    hasLoot = true
+    print(generateLootMessage(playerName, lootAmount))
+  end
+  if not hasLoot then
+    print("No loot has been collected yet.")
+  end
+end
+
+SLASH_SPUDLOOTSHARE1 = "/spudlootshare"
+SlashCmdList["SPUDLOOTSHARE"] = function(msg)
+  local hasLoot = false
+  for playerName, lootAmount in pairs(Spud.playerLoot) do
+    hasLoot = true
+    SendChatMessage(generateLootMessage(playerName, lootAmount), "PARTY")
+  end
+  if not hasLoot then
+    SendChatMessage(L["NO_LOOT"], "PARTY")
+  end
+end
+
+SLASH_SPUDLOOTWHISPER1 = "/spudlootwhisper"
+SlashCmdList["SPUDLOOTWHISPER"] = function(msg)
+  if msg and msg:trim() ~= "" then
+    local targetPlayer = msg:trim()
+    local hasLoot = false
+    
+    for playerName, lootAmount in pairs(Spud.playerLoot) do
+      hasLoot = true
+      SendChatMessage(generateLootMessage(playerName, lootAmount), "WHISPER", nil, targetPlayer)
+    end
+    
+    if not hasLoot then
+      SendChatMessage(L["NO_LOOT"], "WHISPER", nil, targetPlayer)
+    end
+  else
+    print(L["USAGE_WHISPER"])
+  end
+end
+
+-- Add to the existing slash commands section
+SLASH_UNTAMEDBEASTMODE1 = "/untamedbeastmode"
+SlashCmdList["UNTAMEDBEASTMODE"] = function(msg)
+    -- Override the kill count message generator temporarily
+    local originalGenerator = generateKillCountMessage
+    generateKillCountMessage = function(playerName, killCount)
+        if Spud.totalKills == 0 then
+            return string.format("%s *RAWRS* %d *GROWLS*", playerName, killCount)
+        end
+        local percentage = (killCount / Spud.totalKills) * 100
+        return string.format("%s has *SAVAGELY MAULED* %d prey (*FEROCIOUSLY* %d%% of the hunt)", 
+            playerName, killCount, percentage)
+    end
+    
+    -- Reset after 30 seconds
+    C_Timer.After(30, function()
+        generateKillCountMessage = originalGenerator
+        print("The beast has been tamed... for now...")
+    end)
+    
+    print("*UNLEASHING PRIMAL FURY* - Messages are now more... bestial... for 30 seconds")
 end
 
 -- create frame and register event
@@ -137,4 +266,4 @@ frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 frame:SetScript("OnEvent", eventHandler)
 
 -- initialize kill counts
-resetKillCounts()
+resetCounts()

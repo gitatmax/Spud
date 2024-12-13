@@ -9,13 +9,12 @@ _Checked_ items are implemented, _unchecked_ items are planned.
 - [x] Use `/spud` to list your current session's kill percentages for each player
 - [x] Use `/spudshare` to share your kill counts with your party
 - [x] Use `/spudwhisper <player>` to whisper your kill counts to a player
-- [x] Use `/spudreset` to reset your kill counts
-- [ ] Use `/spudresetall` to reset your kill counts for all characters
+- [x] Use `/spudreset` to reset all statistics
 - [x] Use `/spudhelp` to list all available commands
-- [ ] Add option to have killcounts automatically reset at a given time daily
-- [ ] Add option to set killcount duration
-- [ ] Add option to set killcounts to persist between sessions
-- [ ] Add option to enable laps to compare killcounts over time
+- [x] Use `/spudloot` to list current session's loot statistics
+- [x] Use `/spudlootshare` to share loot statistics with party
+- [x] Use `/spudlootwhisper <player>` to whisper loot statistics to player
+- [ ] Add interface for configuring kill count persistence, reset timing, and lap tracking
 
 **WARNING: Do not** use `/untamedbeastmode` under any circumstances
 
