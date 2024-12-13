@@ -1,0 +1,8 @@
+{
+  "name": "spud",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "copy": "bun bunfile.js"
+  }
+}

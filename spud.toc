@@ -4,3 +4,30 @@
 ## Author: Maxwell White (maxehmum on CurseForge & gitatmax on GitHub)
 ## Version: 1.0
 spud.lua
+## SavedVariables: SpudDB
+## SavedVariablesPerCharacter: SpudCharacterDB
+
+local function eventHandler(self, event)
+  if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+    local _, subevent, _, srcGUID, _, _, _, _, _, dstFlags = CombatLogGetCurrentEventInfo()
+
+    if subevent == "PARTY_KILL" then
+      -- check if the killed unit is an NPC
+      local isNPC = bit.band(dstFlags, COMBATLOG_OBJECT_TYPE_NPC) > 0
+
+      if isNPC and srcGUID then
+        -- Get the player name from the GUID
+        local playerName = select(6, GetPlayerInfoByGUID(srcGUID))
+
+        -- increment the count for this player
+        if playerName then
+          if not playerKills[playerName] then
+            playerKills[playerName] = 0
+          end
+          playerKills[playerName] = playerKills[playerName] + 1
+          totalKills = totalKills + 1
+        end
+      end
+    end
+  end
+end
