@@ -14,6 +14,7 @@ _Checked_ items are implemented, _unchecked_ items are planned.
 - [x] Use `/spudloot` to list current session's loot statistics
 - [x] Use `/spudlootshare` to share loot statistics with party
 - [x] Use `/spudlootwhisper <player>` to whisper loot statistics to player
+- [x] Use `/spudwindow` to toggle a running, movable stats window
 - [ ] Add interface for configuring kill count persistence, reset timing, and lap tracking
 
 **WARNING: Do not** use `/untamedbeastmode` under any circumstances

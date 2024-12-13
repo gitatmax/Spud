@@ -119,6 +119,10 @@ local function eventHandler(self, event)
         end
       end
     end
+
+    if SpudStatsFrame and SpudStatsFrame:IsShown() then
+        UpdateStats(SpudStatsFrame)
+    end
   end
 end
 
@@ -183,6 +187,7 @@ SlashCmdList["SPUDHELP"] = function(msg)
   print("  /spudlootshare - Share loot statistics with party")
   print("  /spudlootwhisper <player> - Whisper loot statistics to player")
   print("  /spudhelp - Show this help message")
+  print("  /spudwindow - Toggle stats window display")
 end
 
 SLASH_SPUDRESETALL1 = "/spudresetall"
@@ -267,3 +272,66 @@ frame:SetScript("OnEvent", eventHandler)
 
 -- initialize kill counts
 resetCounts()
+
+-- Create the main frame
+local function CreateStatsFrame()
+    local frame = CreateFrame("Frame", "SpudStatsFrame", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(300, 400)
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    
+    -- Add title
+    frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    frame.title:SetPoint("TOP", 0, -5)
+    frame.title:SetText("Spud Stats")
+    
+    -- Add scrolling content frame
+    local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 8, -30)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 8)
+    
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetSize(scrollFrame:GetSize())
+    scrollFrame:SetScrollChild(content)
+    
+    frame.content = content
+    frame:Hide()
+    
+    return frame
+end
+
+-- Update the stats display
+local function UpdateStats(frame)
+    local content = frame.content
+    local yOffset = 0
+    
+    -- Clear existing fontstrings
+    for _, child in pairs({content:GetChildren()}) do
+        child:Hide()
+    end
+    
+    -- Add kill stats
+    for playerName, killCount in pairs(Spud.playerKills) do
+        local text = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        text:SetPoint("TOPLEFT", 10, -yOffset)
+        text:SetText(generateKillCountMessage(playerName, killCount))
+        yOffset = yOffset + 20
+    end
+    
+    -- Add spacing
+    yOffset = yOffset + 20
+    
+    -- Add loot stats
+    for playerName, lootAmount in pairs(Spud.playerLoot) do
+        local text = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        text:SetPoint("TOPLEFT", 10, -yOffset)
+        text:SetText(generateLootMessage(playerName, lootAmount))
+        yOffset = yOffset + 20
+    end
+    
+    content:SetHeight(yOffset)
+end
