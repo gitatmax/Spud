@@ -2,7 +2,7 @@
 ## Title: Spud
 ## Notes: A WoW AddOn for Curious Farmers by Maxwell White
 ## Author: Maxwell White (maxehmum on CurseForge & gitatmax on GitHub)
-## Version: 1.0
+## Version: 1.2.0
 spud.lua
 ## SavedVariables: SpudDB
 ## SavedVariablesPerCharacter: SpudCharacterDB
